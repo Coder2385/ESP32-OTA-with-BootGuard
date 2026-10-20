@@ -1,0 +1,77 @@
+# ESP32-OTA-with-BootGuard
+ESP32 OTA with BootGuard, a self-built safety net that detects crash loops and rolls back automatically.
+
+| ![Setup](images/setup.jpg) | ![OLED](images/oled.jpg)
+
+## The problem
+A broken OTA update can leave a remote device unreachable. The update exists, but it cannot be delivered so someone has to physically go to the device with a USB cable.
+
+## The discovery
+1. I enabled the official rollback: the build flag CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE  plus the approval call in the code. The first test seemed to work.
+
+2. After repeating the test, the broken firmware was in an endless loop. The first result was a false positive. The bootloader never intervened.
+
+3. The cause: PlatformIO’s Arduino framework uses a precompiled bootloader. The build flag reaches only my own code, the bootloader is already built without rollback support, so the flag stays on, the code compiles and nothing happens
+
+4. So I built my own mechanism: BootGuard.
+
+## The solution (BootGuard)
+- A boot counter is stored in NVS (a storage that survives restarts and crashes)
+
+- On every boot: the counter increases by one, early in setup, before anything can crash.
+
+- If setup reaches the end, the counter resets to 0 and the boot is considered successful.
+
+- If the counter exceeds 3, the device is stuck in a crash loop.
+
+- Then BootGuard intervenes: it resets the counter to 0 (preventing ping-pong between partitions), switches the boot partition to the previous version, and restarts.
+
+## How I tested it
+- First I tested the counter separately. Healthy resets stayed at one, forced crashes stacked up to the threshold.
+
+- Then the full test: I pushed a deliberately broken firmware over OTA.
+
+- Result: BootGuard detected the crash loop and rolled back automatically to the working version
+
+## Requirements
+This project requires: An ESP32 board and PlatformIO with the Arduino framework. It uses a custom partition table with two app partitions, because without the two partitions there is nothing to roll back to. Add your WiFi data to a separate file like secret.h (secret.h is just an example, you can name it how you want). 
+
+
+## ✨ Features
+
+- The BootGuard (self-built rollback mechanism)
+- OTA updates
+- Crash loop detection
+- Automatic rollback
+
+## 🧰 Components Required
+
+- ESP32 Development Board (e.g., ESP32 DevKit)
+- SSD1306 OLED display (128x64, I²C)
+- Breadboard and jumper wires
+- Micro-USB cable 
+
+---
+
+## 🔌 Wiring (I²C Bus)
+
+| ESP32 Pin | Function | Connected To |
+|---------- |----------|--------------|
+| 3.3V      | Power    | VCC of OLED |
+| GND |       Ground   | GND of OLED |
+| GPIO21    | SDA      | SDA of OLED |
+| GPIO22    | SCL      | SCL of OLED |
+
+## ▶️ Usage
+
+- This project uses a custom partitions.csv with two app partitions
+- First flash must be over USB; after that, updates can go over OTA
+
+1. Install required libraries via PlatformIO — add these to `platformio.ini`:
+
+```ini
+lib_deps =
+   adafruit/Adafruit SSD1306@^2.5.7
+   adafruit/Adafruit GFX Library@^1.11.6
+```
+
