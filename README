@@ -43,6 +43,7 @@ This project requires: An ESP32 board and PlatformIO with the Arduino framework.
 - OTA updates
 - Crash loop detection
 - Automatic rollback
+- WiFi timeout with automatic retry
 
 ## 🧰 Components Required
 
