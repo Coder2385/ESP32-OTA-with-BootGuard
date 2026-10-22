@@ -1,5 +1,5 @@
 # ESP32-OTA-with-BootGuard
-ESP32 OTA with BootGuard, a self-built safety net that detects crash loops and rolls back automatically.
+ESP32 OTA with BootGuard, a self-built safety net that detects crash loops and rolls back automatically. and recovers from network failures of survives dead network
 
 | ![Setup](images/setup.jpg) | ![OLED](images/oled.jpg)
 
